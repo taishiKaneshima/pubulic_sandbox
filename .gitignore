@@ -1,0 +1,29 @@
+# シークレット情報を無視する
+secrets/
+
+# ただし、sample-secret.json は追跡対象にする
+!/secrets/sample-secret.json
+
+# Python のキャッシュや仮想環境関連
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
