@@ -6,6 +6,12 @@ def main():
     client = EdgeXAPIClient()  # secrets/secret.json からデフォルト値がロードされる
 
     # # Restful APIのテスト
+
+    # public_API
+    ticket = client.get_ticket_summary()
+    print(ticket)
+
+    # # private_API
     # response = client.get_account_position_transaction_page(
     #     account_id=client.account_id,
     #     filter_type_list="SETTLE_FUNDING_FEE",
@@ -17,19 +23,22 @@ def main():
     # except Exception as e:
         # print("Response (Raw):", response.text)
 
-    # WebSocket 接続の例
+
+    ## WebSocket接続のテスト
+
+    # パブリックWebSocket接続
+    # channels = [
+    # {"type": "subscribe", "channel": "ticker.all"},  # すべてのティックデータ
+    #     # 複数のチャンネルを購読可
+    # ]
+    # asyncio.run(client.connect_public_websocket(channels))
+
     # アプリ向けのWebSocket接続
     # asyncio.run(client.connect_private_websocket_app())
 
     # ブラウザ向けのWebSocket接続
     # asyncio.run(client.connect_private_websocket_web())
 
-    # パブリックWebSocket接続テスト
-    # channels = [
-    # {"type": "subscribe", "channel": "ticker.all"},  # すべてのティックデータ
-    #     # 複数のチャンネルを購読可
-    # ]
-    # asyncio.run(client.connect_public_websocket(channels))
 
     # イベントフックの登録
     # async def handle_order_update(data):

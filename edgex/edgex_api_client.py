@@ -11,6 +11,7 @@ import traceback
 from websockets.exceptions import InvalidStatusCode, WebSocketException
 import re
 from collections import deque
+from typing import Optional
 
 # 定数: K_MODULUS（公式実装の値）
 K_MODULUS = int("0800000000000010ffffffffffffffffb781126dcae7b2321e66a241adc64d2f", 16)
@@ -146,26 +147,43 @@ class EdgeXAPIClient:
         return headers
 
     # RESTful APIでの通信
-    def send_api_request(self, http_method: str, endpoint: str, query_params: dict,
-                            data: dict = None, retries: int = 3, base_wait: float = 1.0,
-                            max_wait: float = 5.0):
+    def send_api_request(self, http_method: str, endpoint: str, query_params: dict = None,
+                        data: dict = None, retries: int = 3, base_wait: float = 1.0,
+                        max_wait: float = 5.0, auth_required: bool = True):
         """
         BASE_URL に対して、指定されたエンドポイント、HTTPメソッド、クエリパラメータでリクエストを送信します。
         リトライ時は線形に待機時間を増加させ、上限を設けます。
+
+        :param http_method: HTTPメソッド（"GET" または "POST"）
+        :param endpoint: APIエンドポイント
+        :param query_params: クエリパラメータ
+        :param data: POSTデータ
+        :param retries: 最大リトライ回数
+        :param base_wait: 初回リトライの待機時間（秒）
+        :param max_wait: 最大待機時間（秒）
+        :param auth_required: 認証が必要か（デフォルトは `True`、パブリック API は `False`）
+        :return: APIレスポンス（JSON）
         """
         url = self.base_url + endpoint
         attempt = 0
+        query_params = query_params or {}  # None の場合、空の辞書をセット
+
         while attempt <= retries:
             try:
-                headers = self.generate_signature_headers(http_method, endpoint, query_params)
-                print(f"Attempt {attempt + 1}: Sending request to {url}")
+                # 認証ヘッダーが必要な場合のみ追加
+                headers = self.generate_signature_headers(http_method, endpoint, query_params) if auth_required else {}
+
+                print(f"Attempt {attempt + 1}: Sending {http_method} request to {url}")
+
                 if http_method.upper() == "GET":
                     response = requests.get(url, headers=headers, params=query_params)
                 elif http_method.upper() == "POST":
                     response = requests.post(url, headers=headers, params=query_params, json=data)
                 else:
                     raise ValueError(f"Unsupported HTTP method: {http_method}")
-                return response
+
+                return response.json()
+
             except Exception as e:
                 attempt += 1
                 if attempt > retries:
@@ -174,6 +192,161 @@ class EdgeXAPIClient:
                 print(f"Request failed: {e}. Retrying in {wait_time} seconds (attempt {attempt}/{retries})...")
                 time.sleep(wait_time)
 
+    # Public API
+    def get_server_time(self):
+        """
+        GET /api/v1/public/meta/getServerTime
+        サーバーの現在時刻を取得する。
+
+        Returns:
+            dict: APIレスポンス（サーバーのタイムスタンプ）
+        """
+        endpoint = "/api/v1/public/meta/getServerTime"
+        return self.send_api_request("GET", endpoint, auth_required=False)
+
+    def get_meta_data(self):
+        """
+        GET /api/v1/public/meta/getMetaData
+        グローバルなメタデータ情報を取得する。
+
+        Returns:
+            dict: APIレスポンス（取引所のコインリスト、契約リスト、ネットワーク情報など）
+        """
+        endpoint = "/api/v1/public/meta/getMetaData"
+        return self.send_api_request("GET", endpoint, auth_required=False)
+
+    def get_ticket_summary(self):
+        """
+        GET /api/v1/public/quote/getTicketSummary
+        市場のチケットサマリーを取得します。
+        """
+        endpoint = "/api/v1/public/quote/getTicketSummary"
+        return self.send_api_request("GET", endpoint, auth_required=False)
+
+    def get_ticker(self, contract_id: str):
+        """
+        GET /api/v1/public/quote/getTicker
+        特定の契約IDのティッカー情報を取得します。
+
+        :param contract_id: 契約ID
+        """
+        endpoint = "/api/v1/public/quote/getTicker"
+        return self.send_api_request("GET", endpoint, query_params={"contractId": contract_id}, auth_required=False)
+
+    def get_multi_contract_kline(self, contract_ids: str, granularity: int, start_time: Optional[int] = None, end_time: Optional[int] = None):
+        """
+        GET /api/v1/public/quote/getMultiContractKline
+        複数の契約のKラインデータを取得します。
+
+        :param contract_ids: カンマ区切りの契約IDリスト
+        :param granularity: Kラインの粒度（例：1、5、15分など）
+        :param start_time: 開始時間（オプション、タイムスタンプ形式）
+        :param end_time: 終了時間（オプション、タイムスタンプ形式）
+        """
+        params = {"contractIds": contract_ids, "granularity": granularity}
+        if start_time:
+            params["startTime"] = start_time
+        if end_time:
+            params["endTime"] = end_time
+
+        endpoint = "/api/v1/public/quote/getMultiContractKline"
+        return self.send_api_request("GET", endpoint, query_params=params, auth_required=False)
+
+    def get_kline(self, contract_id: str, granularity: int, start_time: Optional[int] = None, end_time: Optional[int] = None):
+        """
+        GET /api/v1/public/quote/getKline
+        特定の契約のKラインデータを取得します。
+
+        :param contract_id: 契約ID
+        :param granularity: Kラインの粒度（例：1、5、15分など）
+        :param start_time: 開始時間（オプション、タイムスタンプ形式）
+        :param end_time: 終了時間（オプション、タイムスタンプ形式）
+        """
+        params = {"contractId": contract_id, "granularity": granularity}
+        if start_time:
+            params["startTime"] = start_time
+        if end_time:
+            params["endTime"] = end_time
+
+        endpoint = "/api/v1/public/quote/getKline"
+        return self.send_api_request("GET", endpoint, query_params=params, auth_required=False)
+
+    def get_exchange_long_short_ratio(self, contract_id: str, start_time: Optional[int] = None, end_time: Optional[int] = None):
+        """
+        GET /api/v1/public/quote/getExchangeLongShortRatio
+        特定の契約の取引所のロング・ショート比率を取得します。
+
+        :param contract_id: 契約ID
+        :param start_time: 開始時間（オプション、タイムスタンプ形式）
+        :param end_time: 終了時間（オプション、タイムスタンプ形式）
+        """
+        params = {"contractId": contract_id}
+        if start_time:
+            params["startTime"] = start_time
+        if end_time:
+            params["endTime"] = end_time
+
+        endpoint = "/api/v1/public/quote/getExchangeLongShortRatio"
+        return self.send_api_request("GET", endpoint, query_params=params, auth_required=False)
+
+    def get_depth(self, contract_id: str, limit: Optional[int] = None):
+        """
+        GET /api/v1/public/quote/getDepth
+        特定の契約のオーダーブックの深さを取得します。
+
+        :param contract_id: 契約ID
+        :param limit: データの取得制限数（オプション）
+        """
+        params = {"contractId": contract_id}
+        if limit:
+            params["limit"] = limit
+
+        endpoint = "/api/v1/public/quote/getDepth"
+        return self.send_api_request("GET", endpoint, query_params=params, auth_required=False)
+
+    def get_latest_funding_rate(self, contract_id: str = None):
+        """
+        Retrieves the latest funding rate for a specific contract.
+
+        Args:
+            contract_id (str): The ID of the contract. If None, retrieves data for all contracts.
+
+        Returns:
+            JSON response containing the latest funding rate information.
+        """
+        endpoint = "/api/v1/public/funding/getLatestFundingRate"
+        query_params = {"contractId": contract_id} if contract_id else {}
+        return self.send_api_request("GET", endpoint, query_params, auth_required=False)
+
+    def get_funding_rate_history(self, contract_id: str = None, size: int = 10, offset_data: str = None, filter_settlement_funding_rate: bool = None, filter_begin_time_inclusive: str = None, filter_end_time_exclusive: str = None):
+        """
+        Retrieves the funding rate history for a specific contract with pagination.
+
+        Args:
+            contract_id (str): The ID of the contract. If None, retrieves data for all contracts.
+            size (int): Number of items to retrieve (1-100).
+            offset_data (str): Pagination offset.
+            filter_settlement_funding_rate (bool): If True, only query settlement funding rates.
+            filter_begin_time_inclusive (str): Start time for filtering data.
+            filter_end_time_exclusive (str): End time for filtering data.
+
+        Returns:
+            JSON response containing the funding rate history.
+        """
+        endpoint = "/api/v1/public/funding/getFundingRatePage"
+        query_params = {
+            "contractId": contract_id,
+            "size": size,
+            "offsetData": offset_data,
+            "filterSettlementFundingRate": filter_settlement_funding_rate,
+            "filterBeginTimeInclusive": filter_begin_time_inclusive,
+            "filterEndTimeExclusive": filter_end_time_exclusive
+        }
+        # Remove keys with None values
+        query_params = {k: v for k, v in query_params.items() if v is not None}
+        return self.send_api_request("GET", endpoint, query_params, auth_required=False)
+
+    # Private API
     def get_account_position_transaction_page(self, account_id: str = None,
                                                 filter_type_list: str = "SETTLE_FUNDING_FEE",
                                                 size: str = "10"):
