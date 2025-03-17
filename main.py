@@ -8,10 +8,10 @@ def main():
     # # Restful APIのテスト
 
     # public_API
-    ticket = client.get_ticket_summary()
-    print(ticket)
+    # ticket = client.get_ticket_summary()
+    # print(ticket)
 
-    # # private_API
+    # private_API
     # response = client.get_account_position_transaction_page(
     #     account_id=client.account_id,
     #     filter_type_list="SETTLE_FUNDING_FEE",

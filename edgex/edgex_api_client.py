@@ -11,7 +11,7 @@ import traceback
 from websockets.exceptions import InvalidStatusCode, WebSocketException
 import re
 from collections import deque
-from typing import Optional
+from typing import Optional, List, Dict, Any
 
 # 定数: K_MODULUS（公式実装の値）
 K_MODULUS = int("0800000000000010ffffffffffffffffb781126dcae7b2321e66a241adc64d2f", 16)
@@ -347,23 +347,427 @@ class EdgeXAPIClient:
         return self.send_api_request("GET", endpoint, query_params, auth_required=False)
 
     # Private API
-    def get_account_position_transaction_page(self, account_id: str = None,
-                                                filter_type_list: str = "SETTLE_FUNDING_FEE",
-                                                size: str = "10"):
-        """
-        /api/v1/private/account/getPositionTransactionPage エンドポイントへ GET リクエストを送信します。
-        各パラメータは個別に指定可能で、指定がなければデフォルト値を利用します。
-        """
+    def get_position_transaction_page(
+        self,
+        account_id: Optional[str] = None,
+        size: Optional[str] = None,
+        offset_data: Optional[str] = None,
+        filter_coin_id_list: Optional[str] = None,
+        filter_contract_id_list: Optional[str] = None,
+        filter_type_list: Optional[str] = None,
+        filter_start_created_time_inclusive: Optional[str] = None,
+        filter_end_created_time_exclusive: Optional[str] = None,
+        filter_close_only: Optional[str] = None,
+        filter_open_only: Optional[str] = None,
+    ):
+        """GET /api/v1/private/account/getPositionTransactionPage"""
         endpoint = "/api/v1/private/account/getPositionTransactionPage"
-        # account_id が指定されていなければインスタンスの account_id を使用
         if account_id is None:
-            account_id = self.account_id
-        query_params = {
+            account_id = str(self.account_id)
+        params = {
             "accountId": account_id,
+            "size": size,
+            "offsetData": offset_data,
+            "filterCoinIdList": filter_coin_id_list,
+            "filterContractIdList": filter_contract_id_list,
             "filterTypeList": filter_type_list,
-            "size": size
+            "filterStartCreatedTimeInclusive": filter_start_created_time_inclusive,
+            "filterEndCreatedTimeExclusive": filter_end_created_time_exclusive,
+            "filterCloseOnly": filter_close_only,
+            "filterOpenOnly": filter_open_only,
         }
-        return self.send_api_request("GET", endpoint, query_params)
+        return self.send_api_request("GET", endpoint, params)
+
+    def get_position_transaction_by_id(
+        self, account_id: Optional[str] = None, position_transaction_id_list: Optional[str] = None
+    ):
+        """GET /api/v1/private/account/getPositionTransactionById"""
+        endpoint = "/api/v1/private/account/getPositionTransactionById"
+        if account_id is None:
+            account_id = str(self.account_id)
+        params = {
+            "accountId": account_id,
+            "positionTransactionIdList": position_transaction_id_list,
+        }
+        return self.send_api_request("GET", endpoint, params)
+
+    def get_position_term_page(
+        self,
+        account_id: Optional[str] = None,
+        size: Optional[str] = None,
+        offset_data: Optional[str] = None,
+        filter_coin_id_list: Optional[str] = None,
+        filter_contract_id_list: Optional[str] = None,
+        filter_is_long_position: Optional[str] = None,
+        filter_start_created_time_inclusive: Optional[str] = None,
+        filter_end_created_time_exclusive: Optional[str] = None,
+    ):
+        """GET /api/v1/private/account/getPositionTermPage"""
+        endpoint = "/api/v1/private/account/getPositionTermPage"
+        if account_id is None:
+            account_id = str(self.account_id)
+        params = {
+            "accountId": account_id,
+            "size": size,
+            "offsetData": offset_data,
+            "filterCoinIdList": filter_coin_id_list,
+            "filterContractIdList": filter_contract_id_list,
+            "filterIsLongPosition": filter_is_long_position,
+            "filterStartCreatedTimeInclusive": filter_start_created_time_inclusive,
+            "filterEndCreatedTimeExclusive": filter_end_created_time_exclusive,
+        }
+        return self.send_api_request("GET", endpoint, params)
+
+    def get_position_by_contract_id(
+        self, account_id: Optional[str] = None, contract_id_list: Optional[str] = None
+    ):
+        """GET /api/v1/private/account/getPositionByContractId"""
+        endpoint = "/api/v1/private/account/getPositionByContractId"
+        if account_id is None:
+            account_id = str(self.account_id)
+        params = {"accountId": account_id, "contractIdList": contract_id_list}
+        return self.send_api_request("GET", endpoint, params)
+
+    def get_collateral_transaction_page(
+        self,
+        account_id: Optional[str] = None,
+        size: Optional[str] = None,
+        offset_data: Optional[str] = None,
+        filter_coin_id_list: Optional[str] = None,
+        filter_type_list: Optional[str] = None,
+        filter_start_created_time_inclusive: Optional[str] = None,
+        filter_end_created_time_exclusive: Optional[str] = None,
+    ):
+        """GET /api/v1/private/account/getCollateralTransactionPage"""
+        endpoint = "/api/v1/private/account/getCollateralTransactionPage"
+        if account_id is None:
+            account_id = str(self.account_id)
+        params = {
+            "accountId": account_id,
+            "size": size,
+            "offsetData": offset_data,
+            "filterCoinIdList": filter_coin_id_list,
+            "filterTypeList": filter_type_list,
+            "filterStartCreatedTimeInclusive": filter_start_created_time_inclusive,
+            "filterEndCreatedTimeExclusive": filter_end_created_time_exclusive,
+        }
+        return self.send_api_request("GET", endpoint, params)
+
+    def get_collateral_transaction_by_id(
+        self, account_id: Optional[str] = None, collateral_transaction_id_list: Optional[str] = None
+    ):
+        """GET /api/v1/private/account/getCollateralTransactionById"""
+        endpoint = "/api/v1/private/account/getCollateralTransactionById"
+        if account_id is None:
+            account_id = str(self.account_id)
+        params = {
+            "accountId": account_id,
+            "collateralTransactionIdList": collateral_transaction_id_list,
+        }
+        return self.send_api_request("GET", endpoint, params)
+
+    def get_collateral_by_coin_id(
+        self, account_id: Optional[str] = None, coin_id_list: Optional[str] = None
+    ):
+        """GET /api/v1/private/account/getCollateralByCoinId"""
+        endpoint = "/api/v1/private/account/getCollateralByCoinId"
+        if account_id is None:
+            account_id = str(self.account_id)
+        params = {"accountId": account_id, "coinIdList": coin_id_list}
+        return self.send_api_request("GET", endpoint, params)
+
+    def get_account_page(self, size: Optional[str] = None, offset_data: Optional[str] = None):
+        """GET /api/v1/private/account/getAccountPage"""
+        endpoint = "/api/v1/private/account/getAccountPage"
+        params = {"size": size, "offsetData": offset_data}
+        return self.send_api_request("GET", endpoint, params)
+
+    def get_account_deleverage_light(self, account_id: Optional[str] = None):
+        """GET /api/v1/private/account/getAccountDeleverageLight"""
+        endpoint = "/api/v1/private/account/getAccountDeleverageLight"
+        if account_id is None:
+            account_id = str(self.account_id)
+        params = {"accountId": account_id}
+        return self.send_api_request("GET", endpoint, params)
+
+    def get_account_by_id(self, account_id: Optional[str] = None):
+        """GET /api/v1/private/account/getAccountById"""
+        endpoint = "/api/v1/private/account/getAccountById"
+        if account_id is None:
+            account_id = str(self.account_id)
+        params = {"accountId": account_id}
+        return self.send_api_request("GET", endpoint, params)
+
+    def get_account_asset(self, account_id: Optional[str] = None):
+        """GET /api/v1/private/account/getAccountAsset"""
+        endpoint = "/api/v1/private/account/getAccountAsset"
+        if account_id is None:
+            account_id = str(self.account_id)
+        params = {"accountId": account_id}
+        return self.send_api_request("GET", endpoint, params)
+
+    def get_account_asset_snapshot_page(
+        self,
+        account_id: Optional[str] = None,
+        size: Optional[str] = None,
+        offset_data: Optional[str] = None,
+        filter_start_created_time_inclusive: Optional[str] = None,
+        filter_end_created_time_exclusive: Optional[str] = None,
+    ):
+        """GET /api/v1/private/account/getAccountAssetSnapshotPage"""
+        endpoint = "/api/v1/private/account/getAccountAssetSnapshotPage"
+        if account_id is None:
+            account_id = str(self.account_id)
+        params = {
+            "accountId": account_id,
+            "size": size,
+            "offsetData": offset_data,
+            "filterStartCreatedTimeInclusive": filter_start_created_time_inclusive,
+            "filterEndCreatedTimeExclusive": filter_end_created_time_exclusive,
+        }
+        return self.send_api_request("GET", endpoint, params)
+
+    def get_max_create_order_size(self, account_id: str, contract_id: str, price: str):
+        """POST /api/v1/private/order/getMaxCreateOrderSize"""
+        endpoint = "/api/v1/private/order/getMaxCreateOrderSize"
+        payload = {
+            "accountId": account_id,
+            "contractId": contract_id,
+            "price": price,
+        }
+        return self.send_api_request("POST", endpoint, data=payload)
+
+    def create_order(self, payload: Dict[str, Any]):
+        """POST /api/v1/private/order/createOrder"""
+        endpoint = "/api/v1/private/order/createOrder"
+        return self.send_api_request("POST", endpoint, data=payload)
+
+    def cancel_order_by_id(self, account_id: str, order_id_list: List[str]):
+        """POST /api/v1/private/order/cancelOrderById"""
+        endpoint = "/api/v1/private/order/cancelOrderById"
+        payload = {
+            "accountId": account_id,
+            "orderIdList": order_id_list,
+        }
+        return self.send_api_request("POST", endpoint, data=payload)
+
+    def cancel_all_order(self, account_id: str):
+        """POST /api/v1/private/order/cancelAllOrder"""
+        endpoint = "/api/v1/private/order/cancelAllOrder"
+        payload = {
+            "accountId": account_id,
+        }
+        return self.send_api_request("POST", endpoint, data=payload)
+
+    def get_order_by_id(
+        self, account_id: str, order_id_list: str
+    ):
+        """GET /api/v1/private/order/getOrderById"""
+        endpoint = "/api/v1/private/order/getOrderById"
+        params = {"accountId": account_id, "orderIdList": order_id_list}
+        return self.send_api_request("GET", endpoint, params)
+
+    def get_order_by_client_order_id(
+        self, account_id: str, client_order_id_list: str
+    ):
+        """GET /api/v1/private/order/getOrderByClientOrderId"""
+        endpoint = "/api/v1/private/order/getOrderByClientOrderId"
+        params = {"accountId": account_id, "clientOrderIdList": client_order_id_list}
+        return self.send_api_request("GET", endpoint, params)
+
+    def get_history_order_page(
+        self,
+        account_id: str,
+        size: Optional[str] = None,
+        offset_data: Optional[str] = None,
+        filter_coin_id_list: Optional[str] = None,
+        filter_contract_id_list: Optional[str] = None,
+        filter_type_list: Optional[str] = None,
+        filter_status_list: Optional[str] = None,
+        filter_is_liquidate_list: Optional[str] = None,
+        filter_is_deleverage_list: Optional[str] = None,
+        filter_is_position_tpsl_list: Optional[str] = None,
+        filter_start_created_time_inclusive: Optional[str] = None,
+        filter_end_created_time_exclusive: Optional[str] = None,
+    ):
+        """GET /api/v1/private/order/getHistoryOrderPage"""
+        endpoint = "/api/v1/private/order/getHistoryOrderPage"
+        params = {
+            "accountId": account_id,
+            "size": size,
+            "offsetData": offset_data,
+            "filterCoinIdList": filter_coin_id_list,
+            "filterContractIdList": filter_contract_id_list,
+            "filterTypeList": filter_type_list,
+            "filterStatusList": filter_status_list,
+            "filterIsLiquidateList": filter_is_liquidate_list,
+            "filterIsDeleverageList": filter_is_deleverage_list,
+            "filterIsPositionTpslList": filter_is_position_tpsl_list,
+            "filterStartCreatedTimeInclusive": filter_start_created_time_inclusive,
+            "filterEndCreatedTimeExclusive": filter_end_created_time_exclusive,
+        }
+        return self.send_api_request("GET", endpoint, params)
+
+    def get_history_order_fill_transaction_page(
+        self,
+        account_id: str,
+        size: Optional[str] = None,
+        offset_data: Optional[str] = None,
+        filter_coin_id_list: Optional[str] = None,
+        filter_contract_id_list: Optional[str] = None,
+        filter_order_id_list: Optional[str] = None,
+        filter_is_liquidate_list: Optional[str] = None,
+        filter_is_deleverage_list: Optional[str] = None,
+        filter_is_position_tpsl_list: Optional[str] = None,
+        filter_start_created_time_inclusive: Optional[str] = None,
+        filter_end_created_time_exclusive: Optional[str] = None,
+    ):
+        """GET /api/v1/private/order/getHistoryOrderFillTransactionPage"""
+        endpoint = "/api/v1/private/order/getHistoryOrderFillTransactionPage"
+        params = {
+            "accountId": account_id,
+            "size": size,
+            "offsetData": offset_data,
+            "filterCoinIdList": filter_coin_id_list,
+            "filterContractIdList": filter_contract_id_list,
+            "filterOrderIdList": filter_order_id_list,
+            "filterIsLiquidateList": filter_is_liquidate_list,
+            "filterIsDeleverageList": filter_is_deleverage_list,
+            "filterIsPositionTpslList": filter_is_position_tpsl_list,
+            "filterStartCreatedTimeInclusive": filter_start_created_time_inclusive,
+            "filterEndCreatedTimeExclusive": filter_end_created_time_exclusive,
+        }
+        return self.send_api_request("GET", endpoint, params)
+
+    def get_history_order_fill_transaction_by_id(
+        self, account_id: str, order_fill_transaction_id_list: str
+    ):
+        """GET /api/v1/private/order/getHistoryOrderFillTransactionById"""
+        endpoint = "/api/v1/private/order/getHistoryOrderFillTransactionById"
+        params = {
+            "accountId": account_id,
+            "orderFillTransactionIdList": order_fill_transaction_id_list,
+        }
+        return self.send_api_request("GET", endpoint, params)
+
+    def get_history_order_by_id(self, account_id: str, order_id_list: str):
+        """GET /api/v1/private/order/getHistoryOrderById"""
+        endpoint = "/api/v1/private/order/getHistoryOrderById"
+        params = {"accountId": account_id, "orderIdList": order_id_list}
+        return self.send_api_request("GET", endpoint, params)
+
+    def get_history_order_by_client_order_id(
+        self, account_id: str, client_order_id_list: str
+    ):
+        """GET /api/v1/private/order/getHistoryOrderByClientOrderId"""
+        endpoint = "/api/v1/private/order/getHistoryOrderByClientOrderId"
+        params = {"accountId": account_id, "clientOrderIdList": client_order_id_list}
+        return self.send_api_request("GET", endpoint, params)
+
+    def get_active_order_page(
+        self,
+        account_id: str,
+        size: Optional[str] = None,
+        offset_data: Optional[str] = None,
+        filter_coin_id_list: Optional[str] = None,
+        filter_contract_id_list: Optional[str] = None,
+        filter_type_list: Optional[str] = None,
+        filter_start_created_time_inclusive: Optional[str] = None,
+        filter_end_created_time_exclusive: Optional[str] = None,
+    ):
+        """GET /api/v1/private/order/getActiveOrderPage"""
+        endpoint = "/api/v1/private/order/getActiveOrderPage"
+        params = {
+            "accountId": account_id,
+            "size": size,
+            "offsetData": offset_data,
+            "filterCoinIdList": filter_coin_id_list,
+            "filterContractIdList": filter_contract_id_list,
+            "filterTypeList": filter_type_list,
+            "filterStartCreatedTimeInclusive": filter_start_created_time_inclusive,
+            "filterEndCreatedTimeExclusive": filter_end_created_time_exclusive,
+        }
+        return self.send_api_request("GET", endpoint, params)
+
+    def create_transfer_out(self, payload: Dict[str, Any]):
+        """POST /api/v1/private/transfer/createTransferOut"""
+        endpoint = "/api/v1/private/transfer/createTransferOut"
+        return self.send_api_request("POST", endpoint, data=payload)
+
+    def get_transfer_out_by_id(self, account_id: str, transfer_out_id_list: str):
+        """GET /api/v1/private/transfer/getTransferOutById"""
+        endpoint = "/api/v1/private/transfer/getTransferOutById"
+        params = {"accountId": account_id, "transferOutIdList": transfer_out_id_list}
+        return self.send_api_request("GET", endpoint, params)
+
+    def get_transfer_out_available_amount(self, account_id: str, coin_id: str):
+        """GET /api/v1/private/transfer/getTransferOutAvailableAmount"""
+        endpoint = "/api/v1/private/transfer/getTransferOutAvailableAmount"
+        params = {"accountId": account_id, "coinId": coin_id}
+        return self.send_api_request("GET", endpoint, params)
+
+    def get_transfer_in_by_id(self, account_id: str, transfer_in_id_list: str):
+        """GET /api/v1/private/transfer/getTransferInById"""
+        endpoint = "/api/v1/private/transfer/getTransferInById"
+        params = {"accountId": account_id, "transferInIdList": transfer_in_id_list}
+        return self.send_api_request("GET", endpoint, params)
+
+    def create_normal_withdraw(self, payload: Dict[str, Any]):
+        """POST /api/v1/private/assets/createNormalWithdraw"""
+        endpoint = "/api/v1/private/assets/createNormalWithdraw"
+        return self.send_api_request("POST", endpoint, data=payload)
+
+    def create_cross_withdraw(self, payload: Dict[str, Any]):
+        """POST /api/v1/private/assets/createCrossWithdraw"""
+        endpoint = "/api/v1/private/assets/createCrossWithdraw"
+        return self.send_api_request("POST", endpoint, data=payload)
+
+    def get_normal_withdrawable_amount(self, address: str):
+        """GET /api/v1/private/assets/getNormalWithdrawableAmount"""
+        endpoint = "/api/v1/private/assets/getNormalWithdrawableAmount"
+        params = {"address": address}
+        return self.send_api_request("GET", endpoint, params)
+
+    def get_normal_withdraw_by_id(self, account_id: str, normal_withdraw_id_list: str):
+        """GET /api/v1/private/assets/getNormalWithdrawById"""
+        endpoint = "/api/v1/private/assets/getNormalWithdrawById"
+        params = {"accountId": account_id, "normalWithdrawIdList": normal_withdraw_id_list}
+        return self.send_api_request("GET", endpoint, params)
+
+    def get_cross_withdraw_sign_info(self, chain_id: str, amount: str):
+        """GET /api/v1/private/assets/getCrossWithdrawSignInfo"""
+        endpoint = "/api/v1/private/assets/getCrossWithdrawSignInfo"
+        params = {"chainId": chain_id, "amount": amount}
+        return self.send_api_request("GET", endpoint, params)
+
+    def get_cross_withdraw_by_id(self, account_id: str, cross_withdraw_id_list: str):
+        """GET /api/v1/private/assets/getCrossWithdrawById"""
+        endpoint = "/api/v1/private/assets/getCrossWithdrawById"
+        params = {"accountId": account_id, "crossWithdrawIdList": cross_withdraw_id_list}
+        return self.send_api_request("GET", endpoint, params)
+
+    def get_all_orders_page(
+        self,
+        account_id: str,
+        start_time: Optional[str] = None,
+        end_time: Optional[str] = None,
+        chain_id: Optional[str] = None,
+        type_list: Optional[str] = None,
+        size: Optional[str] = None,
+        offset_data: Optional[str] = None,
+    ):
+        """GET /api/v1/private/assets/getAllOrdersPage"""
+        endpoint = "/api/v1/private/assets/getAllOrdersPage"
+        params = {
+            "accountId": account_id,
+            "startTime": start_time,
+            "endTime": end_time,
+            "chainId": chain_id,
+            "typeList": type_list,
+            "size": size,
+            "offsetData": offset_data,
+        }
+        return self.send_api_request("GET", endpoint, params)
 
     # WebSocketでの通信
     async def connect_public_websocket(self, channels=None):
