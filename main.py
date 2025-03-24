@@ -21,8 +21,13 @@ def main():
     # try:
     #     print("Response:", response.json())
     # except Exception as e:
-        # print("Response (Raw):", response.text)
+    #     print("Response (Raw):", response.text)
 
+    # Postメソッドのテスト
+    # cancelRes = client.cancel_all_order(client.account_id)
+    # print(cancelRes)
+    # orderRes = client.create_order({"accountId": client.account_id})
+    # print(orderRes)
 
     ## WebSocket接続のテスト
 

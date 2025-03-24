@@ -165,13 +165,19 @@ class EdgeXAPIClient:
         :return: APIレスポンス（JSON）
         """
         url = self.base_url + endpoint
+        convertedEndpoint = endpoint
+        if http_method == 'POST':
+            param = 'accountId=' + self.account_id
+            url = url +  '?' + param
+            convertedEndpoint = endpoint + param
+
         attempt = 0
         query_params = query_params or {}  # None の場合、空の辞書をセット
 
         while attempt <= retries:
             try:
                 # 認証ヘッダーが必要な場合のみ追加
-                headers = self.generate_signature_headers(http_method, endpoint, query_params) if auth_required else {}
+                headers = self.generate_signature_headers(http_method, convertedEndpoint, query_params) if auth_required else {}
 
                 print(f"Attempt {attempt + 1}: Sending {http_method} request to {url}")
 
